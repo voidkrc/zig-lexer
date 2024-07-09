@@ -13,7 +13,7 @@ pub const Lexer = struct {
     }
 
     pub fn has_next(self: *Lexer) bool {
-        return self.pos < self.input.len - 1;
+        return self.pos < self.input.len;
     }
 
     pub fn read_identifier(self: *Lexer) []const u8 {
