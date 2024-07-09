@@ -16,10 +16,10 @@ pub const Lexer = struct {
         return self.pos < self.input.len;
     }
 
-    pub fn read_identifier(self: *Lexer) []const u8 {
+    pub fn read_identifier(self: *Lexer, condition: *const fn (c: u8) bool) []const u8 {
         const current_pos = self.pos;
 
-        while (std.ascii.isAlphabetic(self.curr)) {
+        while (condition(self.curr)) {
             self.pos += 1;
             self.curr = self.input[self.pos];
         }
@@ -31,7 +31,8 @@ pub const Lexer = struct {
 
     fn match_char(self: *Lexer) Token {
         const token: Token = switch (self.curr) {
-            'A'...'Z', 'a'...'z' => .{ .Identifier = self.read_identifier() },
+            'A'...'Z', 'a'...'z' => .{ .Identifier = self.read_identifier(std.ascii.isAlphabetic) },
+            '0'...'9' => .{ .Number = self.read_identifier(std.ascii.isDigit) },
             '(' => .OpenParen,
             ')' => .CloseParen,
             '{' => .OpenParen,
@@ -58,7 +59,19 @@ pub const Lexer = struct {
     }
 };
 
-test "Lexer skip whitespaces" {
+fn tokensEqual(a: Token, b: Token) bool {
+    if (!std.mem.eql(u8, @tagName(a), @tagName(b))) {
+        return false;
+    }
+
+    switch (a) {
+        .Identifier => |identifier| return std.mem.eql(u8, identifier, b.Identifier),
+        .Number => |number| return std.mem.eql(u8, number, b.Number),
+        else => return true,
+    }
+}
+
+test "Lexer handles basic example" {
     const input: []const u8 =
         \\ int main() {
         \\   40
@@ -67,22 +80,23 @@ test "Lexer skip whitespaces" {
     ;
 
     var lexer = Lexer.init(input);
-
-    var list = std.ArrayList(u8).init(testing.allocator);
+    var list = std.ArrayList(Token).init(testing.allocator);
     defer list.deinit();
 
     while (lexer.has_next()) {
-        lexer.skip_whitespace();
-        try list.append(lexer.curr);
-        _ = lexer.read_char();
-    }
+        const token = lexer.read_char();
 
-    var whitespace_found = false;
-    for (list.items) |ch| {
-        if (std.ascii.isWhitespace(ch)) {
-            whitespace_found = true;
+        switch (token) {
+            .Illegal => {},
+            else => try list.append(token),
         }
     }
 
-    try testing.expectEqual(false, whitespace_found);
+    const tokens = [_]Token{ .{ .Identifier = "int" }, .{ .Identifier = "main" }, .OpenParen, .CloseParen, .OpenParen, .{ .Number = "40" }, .CloseParen };
+
+    try testing.expectEqual(7, list.items.len);
+
+    for (0.., tokens) |idx, token| {
+        try testing.expect(tokensEqual(token, list.items[idx]));
+    }
 }
