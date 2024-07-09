@@ -92,7 +92,15 @@ test "Lexer handles basic example" {
         }
     }
 
-    const tokens = [_]Token{ .{ .Identifier = "int" }, .{ .Identifier = "main" }, .OpenParen, .CloseParen, .OpenParen, .{ .Number = "40" }, .CloseParen };
+    const tokens = [_]Token{
+        .{ .Identifier = "int" },
+        .{ .Identifier = "main" },
+        .OpenParen,
+        .CloseParen,
+        .OpenParen,
+        .{ .Number = "40" },
+        .CloseParen,
+    };
 
     try testing.expectEqual(7, list.items.len);
 
