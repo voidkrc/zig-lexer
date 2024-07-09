@@ -22,8 +22,6 @@ pub const Lexer = struct {
     }
 
     pub fn read_char(self: *Lexer) void {
-        if (!self.has_next()) return;
-
         const current: u8 = self.input[self.pos];
         self.curr = current;
         self.pos += 1;
