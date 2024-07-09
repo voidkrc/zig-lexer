@@ -2,8 +2,17 @@ const std = @import("std");
 
 pub const Token = union(enum) {
     Identifier: []const u8,
-    Number: i32,
+    Number: []const u8,
     OpenParen,
     CloseParen,
     Illegal,
+
+    pub fn print(self: Token) void {
+        switch (self) {
+            Token.Identifier => |ch| std.debug.print("Identifier: {s}\n", .{ch}),
+            Token.OpenParen => std.debug.print("Open Parentesis\n", .{}),
+            Token.CloseParen => std.debug.print("Closing Parentesis\n", .{}),
+            else => {},
+        }
+    }
 };

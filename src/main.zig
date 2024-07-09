@@ -9,16 +9,11 @@ pub fn main() void {
         \\
     ;
 
-    std.log.warn("Input length {d}", .{input.len});
-
     var lexer = Lexer.init(input);
 
-    lexer.read_char();
     while (lexer.has_next()) {
-        lexer.skip_whitespace();
-
-        std.debug.print("Current char: {c}\n", .{lexer.curr});
-        lexer.read_char();
+        const token = lexer.read_char();
+        token.print();
     }
 }
 
