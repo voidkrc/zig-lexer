@@ -2,13 +2,26 @@ const std = @import("std");
 const Lexer = @import("./core/lexer.zig").Lexer;
 
 pub fn main() void {
-    var lexer = Lexer{ .input = "Hello World" };
+    const input: []const u8 =
+        \\   int main() {
+        \\     40
+        \\  }
+        \\
+    ;
 
+    std.log.warn("Input length {d}", .{input.len});
+
+    var lexer = Lexer.init(input);
+
+    lexer.read_char();
     while (lexer.has_next()) {
-        std.log.info("Character is {c}", .{lexer.read_char()});
+        lexer.skip_whitespace();
+
+        std.debug.print("Current char: {c}\n", .{lexer.curr});
+        lexer.read_char();
     }
 }
 
 test {
-    _ = Lexer;
+    std.testing.refAllDecls(@This());
 }

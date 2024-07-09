@@ -1,39 +1,61 @@
 const std = @import("std");
-
-const Token = union(enum) {
-    Identifier: []const u8,
-    Number,
-    OpenParen,
-    CloseParen,
-    Illegal,
-};
+const testing = std.testing;
 
 pub const Lexer = struct {
     input: []const u8,
-    pos: u8 = 0,
+    pos: usize = 0,
+    curr: u8 = 0,
+
+    pub fn init(input: []const u8) Lexer {
+        return .{ .input = input };
+    }
 
     pub fn has_next(self: *Lexer) bool {
         return self.pos < self.input.len;
     }
 
-    pub fn read_char(self: *Lexer) u8 {
-        const current = self.input[self.pos];
+    pub fn skip_whitespace(self: *Lexer) void {
+        while (std.ascii.isWhitespace(self.curr)) {
+            self.curr = self.input[self.pos];
+            self.pos += 1;
+        }
+    }
 
+    pub fn read_char(self: *Lexer) void {
+        if (!self.has_next()) return;
+
+        const current: u8 = self.input[self.pos];
+        self.curr = current;
         self.pos += 1;
-        return current;
     }
 };
 
-test "Lexer" {
-    const testing = std.testing;
+test "Lexer skip whitespaces" {
+    const input: []const u8 =
+        \\ int main() {
+        \\   40
+        \\}
+        \\
+    ;
 
-    var count: u8 = 0;
-    var lexer = Lexer{ .input = "Hello" };
+    var lexer = Lexer.init(input);
+    _ = lexer.read_char();
+
+    var list = std.ArrayList(u8).init(testing.allocator);
+    defer list.deinit();
 
     while (lexer.has_next()) {
-        _ = lexer.read_char();
-        count += 1;
+        lexer.skip_whitespace();
+        try list.append(lexer.curr);
+        lexer.read_char();
     }
 
-    try testing.expectEqual(5, count);
+    var whitespace_found = false;
+    for (list.items) |ch| {
+        if (std.ascii.isWhitespace(ch)) {
+            whitespace_found = true;
+        }
+    }
+
+    try testing.expectEqual(false, whitespace_found);
 }
