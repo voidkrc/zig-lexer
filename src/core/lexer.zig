@@ -39,7 +39,7 @@ test "Lexer skip whitespaces" {
     ;
 
     var lexer = Lexer.init(input);
-    _ = lexer.read_char();
+    lexer.read_char();
 
     var list = std.ArrayList(u8).init(testing.allocator);
     defer list.deinit();
