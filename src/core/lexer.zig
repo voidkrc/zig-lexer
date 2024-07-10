@@ -9,11 +9,31 @@ pub const Lexer = struct {
     read_pos: usize = 0,
     curr: u8 = 0,
 
-    pub fn init(input: []const u8) Lexer {
-        var lexer = Lexer{ .input = input };
+    keywords: std.StringHashMap(Token),
+
+    pub fn init(input: []const u8, allocator: std.mem.Allocator) Lexer {
+        var map = std.StringHashMap(Token).init(allocator);
+
+        map.put("let", .let) catch unreachable;
+        map.put("fn", .function) catch unreachable;
+        map.put("if", .if_token) catch unreachable;
+        map.put("true", .true_token) catch unreachable;
+        map.put("false", .false_token) catch unreachable;
+        map.put("return", .return_token) catch unreachable;
+        map.put("else", .else_token) catch unreachable;
+
+        var lexer = Lexer{ .input = input, .keywords = map };
         lexer.read_char();
 
         return lexer;
+    }
+
+    pub fn deinit(self: *Lexer) void {
+        self.keywords.deinit();
+    }
+
+    fn is_keyword(self: *Lexer, ch: []const u8) ?Token {
+        return self.keywords.get(ch);
     }
 
     pub fn get_token(self: *Lexer) Token {
@@ -23,9 +43,15 @@ pub const Lexer = struct {
             ')' => .rparen,
             '{' => .lsquirly,
             '}' => .rsquirly,
+            ';' => .semicolon,
+            '=' => .equal,
             0 => .eof,
             'a'...'z', 'A'...'Z', '_' => {
                 const ident = self.read_with_condition(std.ascii.isAlphabetic);
+                if (self.is_keyword(ident)) |t| {
+                    return t;
+                }
+
                 return .{ .identifier = ident };
             },
             '0'...'9' => {
@@ -70,11 +96,12 @@ pub const Lexer = struct {
 test "Lexer handles basic example" {
     const input =
         \\int main() {
-        \\40
+        \\let x = 40;
         \\}
     ;
 
-    var lexer = Lexer.init(input);
+    var lexer = Lexer.init(input, testing.allocator);
+    defer lexer.deinit();
 
     const tokens = [_]Token{
         .{ .identifier = "int" },
@@ -82,7 +109,11 @@ test "Lexer handles basic example" {
         .lparen,
         .rparen,
         .lsquirly,
+        .let,
+        .{ .identifier = "x" },
+        .equal,
         .{ .number = "40" },
+        .semicolon,
         .rsquirly,
         .eof,
     };
