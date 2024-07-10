@@ -19,20 +19,20 @@ pub const Lexer = struct {
     pub fn get_token(self: *Lexer) Token {
         self.skipWhitespace();
         const token: Token = switch (self.curr) {
-            '(' => .LParen,
-            ')' => .RParen,
-            '{' => .LSquirly,
-            '}' => .RSquirly,
-            0 => .EOF,
+            '(' => .lparen,
+            ')' => .rparen,
+            '{' => .lsquirly,
+            '}' => .rsquirly,
+            0 => .eof,
             'a'...'z', 'A'...'Z', '_' => {
                 const ident = self.read_with_condition(std.ascii.isAlphabetic);
-                return .{ .Identifier = ident };
+                return .{ .identifier = ident };
             },
             '0'...'9' => {
                 const number = self.read_with_condition(std.ascii.isDigit);
-                return .{ .Number = number };
+                return .{ .number = number };
             },
-            else => .Illegal,
+            else => .illegal,
         };
 
         self.read_char();
@@ -77,14 +77,14 @@ test "Lexer handles basic example" {
     var lexer = Lexer.init(input);
 
     const tokens = [_]Token{
-        .{ .Identifier = "int" },
-        .{ .Identifier = "main" },
-        .LParen,
-        .RParen,
-        .LSquirly,
-        .{ .Number = "40" },
-        .RSquirly,
-        .EOF,
+        .{ .identifier = "int" },
+        .{ .identifier = "main" },
+        .lparen,
+        .rparen,
+        .lsquirly,
+        .{ .number = "40" },
+        .rsquirly,
+        .eof,
     };
 
     for (tokens) |token| {
