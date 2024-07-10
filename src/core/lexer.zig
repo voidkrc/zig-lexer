@@ -6,105 +6,90 @@ const testing = std.testing;
 pub const Lexer = struct {
     input: []const u8,
     pos: usize = 0,
+    read_pos: usize = 0,
     curr: u8 = 0,
 
     pub fn init(input: []const u8) Lexer {
-        return .{ .input = input };
+        var lexer = Lexer{ .input = input };
+        lexer.read_char();
+
+        return lexer;
     }
 
-    pub fn has_next(self: *Lexer) bool {
-        return self.pos < self.input.len;
-    }
-
-    pub fn read_identifier(self: *Lexer, condition: *const fn (c: u8) bool) []const u8 {
-        const current_pos = self.pos;
-
-        while (condition(self.curr)) {
-            self.pos += 1;
-            self.curr = self.input[self.pos];
-        }
-
-        const id = self.input[current_pos..self.pos];
-        self.pos -= 1;
-        return id;
-    }
-
-    fn match_char(self: *Lexer) Token {
+    pub fn get_token(self: *Lexer) Token {
+        self.skipWhitespace();
         const token: Token = switch (self.curr) {
-            'A'...'Z', 'a'...'z' => .{ .Identifier = self.read_identifier(std.ascii.isAlphabetic) },
-            '0'...'9' => .{ .Number = self.read_identifier(std.ascii.isDigit) },
-            '(' => .OpenParen,
-            ')' => .CloseParen,
-            '{' => .OpenParen,
-            '}' => .CloseParen,
+            '(' => .LParen,
+            ')' => .RParen,
+            '{' => .LSquirly,
+            '}' => .RSquirly,
+            0 => .EOF,
+            'a'...'z', 'A'...'Z', '_' => {
+                const ident = self.read_with_condition(std.ascii.isAlphabetic);
+                return .{ .Identifier = ident };
+            },
+            '0'...'9' => {
+                const number = self.read_with_condition(std.ascii.isDigit);
+                return .{ .Number = number };
+            },
             else => .Illegal,
         };
 
-        self.pos += 1;
-        self.curr = self.input[self.pos];
+        self.read_char();
         return token;
     }
 
-    pub fn read_char(self: *Lexer) Token {
-        const current: u8 = self.input[self.pos];
+    fn read_with_condition(self: *Lexer, condition: *const fn (c: u8) bool) []const u8 {
+        const current_pos = self.pos;
 
-        if (std.ascii.isWhitespace(current)) {
-            self.pos += 1;
-            return .Illegal;
+        while (condition(self.curr)) {
+            self.read_char();
         }
 
-        self.curr = current;
+        return self.input[current_pos..self.pos];
+    }
 
-        return self.match_char();
+    fn skipWhitespace(self: *Lexer) void {
+        while (std.ascii.isWhitespace(self.curr)) {
+            self.read_char();
+        }
+    }
+
+    fn read_char(self: *Lexer) void {
+        if (self.read_pos >= self.input.len) {
+            self.curr = 0;
+        } else {
+            self.curr = self.input[self.read_pos];
+        }
+
+        self.pos = self.read_pos;
+        self.read_pos += 1;
     }
 };
 
-fn tokensEqual(a: Token, b: Token) bool {
-    if (!std.mem.eql(u8, @tagName(a), @tagName(b))) {
-        return false;
-    }
-
-    switch (a) {
-        .Identifier => |identifier| return std.mem.eql(u8, identifier, b.Identifier),
-        .Number => |number| return std.mem.eql(u8, number, b.Number),
-        else => return true,
-    }
-}
-
 test "Lexer handles basic example" {
-    const input: []const u8 =
-        \\ int main() {
-        \\   40
+    const input =
+        \\int main() {
+        \\40
         \\}
-        \\
     ;
 
     var lexer = Lexer.init(input);
-    var list = std.ArrayList(Token).init(testing.allocator);
-    defer list.deinit();
-
-    while (lexer.has_next()) {
-        const token = lexer.read_char();
-
-        switch (token) {
-            .Illegal => {},
-            else => try list.append(token),
-        }
-    }
 
     const tokens = [_]Token{
         .{ .Identifier = "int" },
         .{ .Identifier = "main" },
-        .OpenParen,
-        .CloseParen,
-        .OpenParen,
+        .LParen,
+        .RParen,
+        .LSquirly,
         .{ .Number = "40" },
-        .CloseParen,
+        .RSquirly,
+        .EOF,
     };
 
-    try testing.expectEqual(7, list.items.len);
+    for (tokens) |token| {
+        const t = lexer.get_token();
 
-    for (0.., tokens) |idx, token| {
-        try testing.expect(tokensEqual(token, list.items[idx]));
+        try testing.expectEqualDeep(token, t);
     }
 }
