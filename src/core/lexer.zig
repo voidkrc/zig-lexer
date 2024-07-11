@@ -15,7 +15,15 @@ pub const Lexer = struct {
         var map = std.StringHashMap(Token).init(allocator);
 
         const idents = [_][]const u8{ "let", "fn", "if", "true", "false", "return", "else" };
-        const keywords = [_]Token{ .let, .function, .if_token, .true_token, .false_token, .return_token, .else_token };
+        const keywords = [_]Token{
+            .let,
+            .function,
+            .if_token,
+            .true_token,
+            .false_token,
+            .return_token,
+            .else_token,
+        };
 
         for (0.., keywords) |idx, key| {
             map.put(idents[idx], key) catch unreachable;
