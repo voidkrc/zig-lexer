@@ -25,6 +25,8 @@ pub const Lexer = struct {
             .else_token,
         };
 
+        std.debug.assert(idents.len == keywords.len);
+
         for (0.., keywords) |idx, key| {
             map.put(idents[idx], key) catch unreachable;
         }
