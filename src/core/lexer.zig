@@ -14,13 +14,12 @@ pub const Lexer = struct {
     pub fn init(input: []const u8, allocator: std.mem.Allocator) Lexer {
         var map = std.StringHashMap(Token).init(allocator);
 
-        map.put("let", .let) catch unreachable;
-        map.put("fn", .function) catch unreachable;
-        map.put("if", .if_token) catch unreachable;
-        map.put("true", .true_token) catch unreachable;
-        map.put("false", .false_token) catch unreachable;
-        map.put("return", .return_token) catch unreachable;
-        map.put("else", .else_token) catch unreachable;
+        const idents = [_][]const u8{ "let", "fn", "if", "true", "false", "return", "else" };
+        const keywords = [_]Token{ .let, .function, .if_token, .true_token, .false_token, .return_token, .else_token };
+
+        for (0.., keywords) |idx, key| {
+            map.put(idents[idx], key) catch unreachable;
+        }
 
         var lexer = Lexer{ .input = input, .keywords = map };
         lexer.read_char();
@@ -120,7 +119,6 @@ test "Lexer handles basic example" {
 
     for (tokens) |token| {
         const t = lexer.get_token();
-
         try testing.expectEqualDeep(token, t);
     }
 }
