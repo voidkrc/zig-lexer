@@ -3,11 +3,12 @@ on:
   push:
     paths:
       - '**.zig'
+      - .github/workflows/zig.yml
     branches:
       - main
 jobs:
   test:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: goto-bus-stop/setup-zig@v2
@@ -15,7 +16,7 @@ jobs:
           version: 0.13.0
       - run: zig build test
   lint:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: goto-bus-stop/setup-zig@v2
