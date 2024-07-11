@@ -2,6 +2,6 @@ const std = @import("std");
 
 pub fn main() !void {}
 
-test {
+comptime {
     _ = @import("./core/lexer.zig");
 }
