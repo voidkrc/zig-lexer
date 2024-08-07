@@ -1,9 +1,11 @@
 const std = @import("std");
-const Token = @import("./token.zig").Token;
+const Token = @import("token.zig").Token;
 
 const testing = std.testing;
 
 pub const Lexer = struct {
+    const Self = @This();
+
     input: []const u8,
     pos: usize = 0,
     read_pos: usize = 0,
@@ -11,7 +13,7 @@ pub const Lexer = struct {
 
     keywords: std.StringHashMap(Token),
 
-    pub fn init(input: []const u8, allocator: std.mem.Allocator) Lexer {
+    pub fn init(input: []const u8, allocator: std.mem.Allocator) Self {
         var map = std.StringHashMap(Token).init(allocator);
 
         const idents = [_][]const u8{ "let", "fn", "if", "true", "false", "return", "else" };
